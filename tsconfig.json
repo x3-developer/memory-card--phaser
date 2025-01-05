@@ -28,10 +28,13 @@
       ],
       "@scenes/*": [
         "src/scenes/*"
+      ],
+      "@objects/*": [
+        "src/objects/*"
       ]
     }
   },
   "include": [
     "src"
-  ],
+  ]
 }
