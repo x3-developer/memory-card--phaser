@@ -52,8 +52,6 @@ export default class MemoryScene extends Phaser.Scene {
   private onCardClick(_: Pointer, card: Card) {
     if (card.getIsOpened()) return;
 
-    card.open();
-
     if (this.openedCard) {
       if (this.openedCard.getCardKey() === card.getCardKey()) {
         this.openedCard = null;
@@ -61,12 +59,12 @@ export default class MemoryScene extends Phaser.Scene {
       } else {
         this.openedCard.close();
         this.openedCard = card;
-        // card.close();
-        // this.openedCard = null;
       }
     } else {
       this.openedCard = card;
     }
+
+    card.open();
 
     if (this.openedPairsCount === this.cards.length / 2) {
       this.start();
@@ -80,9 +78,11 @@ export default class MemoryScene extends Phaser.Scene {
     const cardWidth = cardTexture.width + cardPadding;
     const cardHeight = cardTexture.height + cardPadding;
     const offsetX =
-      (this.sys.game.canvas.width - cardWidth * this.cardColumns) / 2;
+      (this.sys.game.canvas.width - cardWidth * this.cardColumns) / 2 +
+      cardWidth / 2;
     const offsetY =
-      (this.sys.game.canvas.height - cardHeight * this.cardRows) / 2;
+      (this.sys.game.canvas.height - cardHeight * this.cardRows) / 2 +
+      cardHeight / 2;
 
     for (let row = 0; row < this.cardRows; row++) {
       for (let column = 0; column < this.cardColumns; column++) {
