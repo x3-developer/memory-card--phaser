@@ -6,11 +6,9 @@ export default class Card extends Phaser.GameObjects.Sprite {
 
   constructor(
     readonly scene: Phaser.Scene,
-    x: number,
-    y: number,
     private readonly cardKey: string
   ) {
-    super(scene, x, y, 'defaultCard');
+    super(scene, 0, 0, 'defaultCard');
 
     this.setOrigin(0, 0);
     this.scene.add.existing(this);

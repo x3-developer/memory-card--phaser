@@ -8,6 +8,7 @@ export default class MemoryScene extends Phaser.Scene {
   private readonly cardKeys: string[] = ['1', '2', '3', '4', '5'];
   private cards: Card[] = [];
   private openedCard: Card | null = null;
+  private openedPairsCount = 0;
 
   constructor() {
     super('MemoryScene');
@@ -24,6 +25,13 @@ export default class MemoryScene extends Phaser.Scene {
   create() {
     this.createBackground();
     this.createCards();
+    this.initCards();
+  }
+
+  private start() {
+    this.openedCard = null;
+    this.openedPairsCount = 0;
+    this.initCards();
   }
 
   private createBackground() {
@@ -31,17 +39,10 @@ export default class MemoryScene extends Phaser.Scene {
   }
 
   private createCards() {
-    const cardPositions = this.getCardPositions();
-    Phaser.Utils.Array.Shuffle(cardPositions);
-
     for (let value of this.cardKeys) {
       for (let i = 0; i < 2; i++) {
-        const cardPosition = cardPositions.pop();
-
-        if (cardPosition) {
-          const card = new Card(this, cardPosition.x, cardPosition.y, value);
-          this.cards.push(card);
-        }
+        const card = new Card(this, value);
+        this.cards.push(card);
       }
     }
 
@@ -56,6 +57,7 @@ export default class MemoryScene extends Phaser.Scene {
     if (this.openedCard) {
       if (this.openedCard.getCardKey() === card.getCardKey()) {
         this.openedCard = null;
+        this.openedPairsCount += 1;
       } else {
         this.openedCard.close();
         this.openedCard = card;
@@ -65,10 +67,14 @@ export default class MemoryScene extends Phaser.Scene {
     } else {
       this.openedCard = card;
     }
+
+    if (this.openedPairsCount === this.cards.length / 2) {
+      this.start();
+    }
   }
 
   private getCardPositions() {
-    const positions = [];
+    const cardPositions = [];
     const cardPadding = 8;
     const cardTexture = this.textures.get('defaultCard').getSourceImage();
     const cardWidth = cardTexture.width + cardPadding;
@@ -83,10 +89,23 @@ export default class MemoryScene extends Phaser.Scene {
         const cardX = offsetX + column * cardWidth;
         const cardY = offsetY + row * cardHeight;
 
-        positions.push({ x: cardX, y: cardY });
+        cardPositions.push({ x: cardX, y: cardY });
       }
     }
 
-    return positions;
+    return Phaser.Utils.Array.Shuffle(cardPositions);
+  }
+
+  private initCards() {
+    const cardPositions = this.getCardPositions();
+
+    this.cards.forEach((card) => {
+      const cardPosition = cardPositions.pop();
+
+      if (!cardPosition) return;
+
+      card.close();
+      card.setPosition(cardPosition.x, cardPosition.y);
+    });
   }
 }
