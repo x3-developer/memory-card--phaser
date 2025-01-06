@@ -1,14 +1,18 @@
 import Phaser from 'phaser';
 import Card from '@objects/card/Card.ts';
+import Scene = Phaser.Scene;
 import Pointer = Phaser.Input.Pointer;
+import Text = Phaser.GameObjects.Text;
 
-export default class MemoryScene extends Phaser.Scene {
+export default class MemoryScene extends Scene {
   private readonly cardRows = 2;
   private readonly cardColumns = 5;
   private readonly cardKeys: string[] = ['1', '2', '3', '4', '5'];
   private cards: Card[] = [];
   private openedCard: Card | null = null;
   private openedPairsCount = 0;
+  private timeout = 30;
+  private timeoutText: Text | null = null;
 
   constructor() {
     super('MemoryScene');
@@ -26,11 +30,14 @@ export default class MemoryScene extends Phaser.Scene {
     this.createBackground();
     this.createCards();
     this.initCards();
+    this.createTimer();
+    this.createText();
   }
 
   private start() {
     this.openedCard = null;
     this.openedPairsCount = 0;
+    this.timeout = 30;
     this.initCards();
   }
 
@@ -49,29 +56,54 @@ export default class MemoryScene extends Phaser.Scene {
     this.input.on('gameobjectdown', this.onCardClick, this);
   }
 
+  private createTimer() {
+    this.time.addEvent({
+      delay: 1000,
+      callback: () => {
+        this.timeout -= 1;
+        this.timeoutText?.setText(`Time: ${this.timeout}`);
+
+        if (this.timeout <= 0) {
+          this.start();
+        }
+      },
+      loop: true,
+    });
+  }
+
+  private createText() {
+    this.timeoutText = this.add.text(10, 330, `Time: ${this.timeout}`, {
+      font: '36px CurseCasual',
+      color: '#ffffff',
+    });
+  }
+
   private onCardClick(_: Pointer, card: Card) {
     if (card.getIsOpened()) return;
 
     card.open();
 
-    setTimeout(() => {
-      if (this.openedCard) {
-        if (this.openedCard.getCardKey() === card.getCardKey()) {
-          this.openedCard = null;
-          this.openedPairsCount += 1;
+    this.time.addEvent({
+      delay: 500,
+      callback: () => {
+        if (this.openedCard) {
+          if (this.openedCard.getCardKey() === card.getCardKey()) {
+            this.openedCard = null;
+            this.openedPairsCount += 1;
+          } else {
+            this.openedCard.close();
+            this.openedCard = null;
+            card.close();
+          }
         } else {
-          this.openedCard.close();
-          this.openedCard = null;
-          card.close();
+          this.openedCard = card;
         }
-      } else {
-        this.openedCard = card;
-      }
 
-      if (this.openedPairsCount === this.cards.length / 2) {
-        this.start();
-      }
-    }, 500);
+        if (this.openedPairsCount === this.cards.length / 2) {
+          this.start();
+        }
+      },
+    });
   }
 
   private getCardPositions() {
