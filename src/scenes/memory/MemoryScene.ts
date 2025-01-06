@@ -3,11 +3,13 @@ import Card from '@objects/card/Card.ts';
 import Scene = Phaser.Scene;
 import Pointer = Phaser.Input.Pointer;
 import Text = Phaser.GameObjects.Text;
+import { ISound } from '@scenes/memory/types.ts';
 
 export default class MemoryScene extends Scene {
   private readonly cardRows = 2;
   private readonly cardColumns = 5;
   private readonly cardKeys: string[] = ['1', '2', '3', '4', '5'];
+  private sounds: ISound | null = null;
   private cards: Card[] = [];
   private openedCard: Card | null = null;
   private openedPairsCount = 0;
@@ -24,11 +26,18 @@ export default class MemoryScene extends Scene {
     for (let cardKey of this.cardKeys) {
       this.load.image(`card${cardKey}`, `assets/cards/card${cardKey}.png`);
     }
+
+    this.load.audio('theme', 'assets/sounds/theme.mp3');
+    this.load.audio('complete', 'assets/sounds/complete.mp3');
+    this.load.audio('success', 'assets/sounds/success.mp3');
+    this.load.audio('card', 'assets/sounds/card.mp3');
+    this.load.audio('timeout', 'assets/sounds/timeout.mp3');
   }
 
   create() {
     this.createBackground();
     this.createCards();
+    this.createSounds();
     this.initCards();
     this.createTimer();
     this.createText();
@@ -56,6 +65,20 @@ export default class MemoryScene extends Scene {
     this.input.on('gameobjectdown', this.onCardClick, this);
   }
 
+  private createSounds() {
+    this.sounds = {
+      complete: this.sound.add('complete'),
+      success: this.sound.add('success'),
+      theme: this.sound.add('theme'),
+      timeout: this.sound.add('timeout'),
+      card: this.sound.add('card'),
+    };
+
+    this.sounds?.theme.play({
+      volume: 0.1,
+    });
+  }
+
   private createTimer() {
     this.time.addEvent({
       delay: 1000,
@@ -64,6 +87,7 @@ export default class MemoryScene extends Scene {
         this.timeoutText?.setText(`Time: ${this.timeout}`);
 
         if (this.timeout <= 0) {
+          this.sounds?.timeout.play();
           this.start();
         }
       },
@@ -81,6 +105,7 @@ export default class MemoryScene extends Scene {
   private onCardClick(_: Pointer, card: Card) {
     if (card.getIsOpened()) return;
 
+    this.sounds?.card.play();
     card.open();
 
     this.time.addEvent({
@@ -88,6 +113,7 @@ export default class MemoryScene extends Scene {
       callback: () => {
         if (this.openedCard) {
           if (this.openedCard.getCardKey() === card.getCardKey()) {
+            this.sounds?.success.play();
             this.openedCard = null;
             this.openedPairsCount += 1;
           } else {
@@ -100,6 +126,7 @@ export default class MemoryScene extends Scene {
         }
 
         if (this.openedPairsCount === this.cards.length / 2) {
+          this.sounds?.complete.play();
           this.start();
         }
       },
