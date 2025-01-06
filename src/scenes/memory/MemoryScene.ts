@@ -4,6 +4,7 @@ import Scene = Phaser.Scene;
 import Pointer = Phaser.Input.Pointer;
 import Text = Phaser.GameObjects.Text;
 import { ISound } from '@scenes/memory/types.ts';
+import TimerEvent = Phaser.Time.TimerEvent;
 
 export default class MemoryScene extends Scene {
   private readonly cardRows = 2;
@@ -15,6 +16,7 @@ export default class MemoryScene extends Scene {
   private openedPairsCount = 0;
   private timeout = 30;
   private timeoutText: Text | null = null;
+  private timer: TimerEvent | null = null;
 
   constructor() {
     super('MemoryScene');
@@ -38,16 +40,42 @@ export default class MemoryScene extends Scene {
     this.createBackground();
     this.createCards();
     this.createSounds();
-    this.initCards();
     this.createTimer();
     this.createText();
+    this.start();
+  }
+
+  private restart() {
+    let animationCount = 0;
+    const onCardMoveComplete = () => {
+      ++animationCount;
+
+      if (animationCount >= this.cards.length) {
+        this.start();
+      }
+    };
+
+    this.cards.forEach((card) => {
+      card.move({
+        x: Number(this.sys.game.config.width) + card.width,
+        y: Number(this.sys.game.config.height) + card.height,
+        delay: card.position.delay,
+        callback: onCardMoveComplete,
+      });
+    });
   }
 
   private start() {
     this.openedCard = null;
     this.openedPairsCount = 0;
     this.timeout = 30;
+
+    if (this.timer) {
+      this.timer.paused = false;
+    }
+
     this.initCards();
+    this.showCards();
   }
 
   private createBackground() {
@@ -76,19 +104,24 @@ export default class MemoryScene extends Scene {
 
     this.sounds?.theme.play({
       volume: 0.1,
+      loop: true,
     });
   }
 
   private createTimer() {
-    this.time.addEvent({
+    this.timer = this.time.addEvent({
       delay: 1000,
       callback: () => {
         this.timeout -= 1;
         this.timeoutText?.setText(`Time: ${this.timeout}`);
 
         if (this.timeout <= 0) {
+          if (this.timer) {
+            this.timer.paused = true;
+          }
+
           this.sounds?.timeout.play();
-          this.start();
+          this.restart();
         }
       },
       loop: true,
@@ -127,7 +160,7 @@ export default class MemoryScene extends Scene {
 
         if (this.openedPairsCount === this.cards.length / 2) {
           this.sounds?.complete.play();
-          this.start();
+          this.restart();
         }
       },
     });
@@ -146,12 +179,15 @@ export default class MemoryScene extends Scene {
       (this.sys.game.canvas.height - cardHeight * this.cardRows) / 2 +
       cardHeight / 2;
 
+    let id = 0;
+
     for (let row = 0; row < this.cardRows; row++) {
       for (let column = 0; column < this.cardColumns; column++) {
         const cardX = offsetX + column * cardWidth;
         const cardY = offsetY + row * cardHeight;
+        ++id;
 
-        cardPositions.push({ x: cardX, y: cardY });
+        cardPositions.push({ x: cardX, y: cardY, delay: id * 100 });
       }
     }
 
@@ -166,8 +202,19 @@ export default class MemoryScene extends Scene {
 
       if (!cardPosition) return;
 
-      card.close();
-      card.setPosition(cardPosition.x, cardPosition.y);
+      card.init(cardPosition);
+    });
+  }
+
+  private showCards() {
+    this.cards.forEach((card) => {
+      card.depth = card.position.delay;
+
+      card.move({
+        x: card.position.x,
+        y: card.position.y,
+        delay: card.position.delay,
+      });
     });
   }
 }
