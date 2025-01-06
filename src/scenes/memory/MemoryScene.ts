@@ -52,23 +52,26 @@ export default class MemoryScene extends Phaser.Scene {
   private onCardClick(_: Pointer, card: Card) {
     if (card.getIsOpened()) return;
 
-    if (this.openedCard) {
-      if (this.openedCard.getCardKey() === card.getCardKey()) {
-        this.openedCard = null;
-        this.openedPairsCount += 1;
-      } else {
-        this.openedCard.close();
-        this.openedCard = card;
-      }
-    } else {
-      this.openedCard = card;
-    }
-
     card.open();
 
-    if (this.openedPairsCount === this.cards.length / 2) {
-      this.start();
-    }
+    setTimeout(() => {
+      if (this.openedCard) {
+        if (this.openedCard.getCardKey() === card.getCardKey()) {
+          this.openedCard = null;
+          this.openedPairsCount += 1;
+        } else {
+          this.openedCard.close();
+          this.openedCard = null;
+          card.close();
+        }
+      } else {
+        this.openedCard = card;
+      }
+
+      if (this.openedPairsCount === this.cards.length / 2) {
+        this.start();
+      }
+    }, 500);
   }
 
   private getCardPositions() {
