@@ -1,6 +1,6 @@
 @font-face {
   font-family: 'CurseCasual';
-  src: url("assets/fonts/Curse Casual.ttf");
+  src: url("fonts/Curse Casual.ttf");
 }
 
 body {
@@ -14,7 +14,7 @@ body::before {
   content: '';
   position: fixed;
   inset: 0;
-  background: url('assets/backgrounds/background.png') no-repeat center center / cover;
+  background: url('backgrounds/background.png') no-repeat center center / cover;
   filter: blur(5px);
 }
 
